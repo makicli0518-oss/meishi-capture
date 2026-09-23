@@ -35,7 +35,7 @@ export async function uploadFile(token, folder, name, blob) {
 
 // アップロード後の実在確認（id で取得。無ければ GraphError 404）
 export async function getItem(token, id) {
-  const res = await fetch(`${BASE}/me/drive/items/${encodeURIComponent(id)}?$select=id,name,size,parentReference`, {
+  const res = await fetch(`${BASE}/me/drive/items/${encodeURIComponent(id)}?$select=id,name,size,parentReference,deleted`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new GraphError(res.status, await res.text().catch(() => ""));

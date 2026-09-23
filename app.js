@@ -190,7 +190,8 @@ async function renderHistory() {
     nm.textContent = it.name;
     const st = document.createElement("div");
     st.className = `st ${it.status}`;
-    st.textContent = STATUS_LABEL[it.status] + (it.error ? `: ${it.error}` : "") + (it.size ? `  ${mb(it.size)} MB` : "");
+    const label = it.status === "done" && it.blob ? "送信済（60秒後に再確認）" : STATUS_LABEL[it.status];
+    st.textContent = label + (it.error ? `: ${it.error}` : "") + (it.size ? `  ${mb(it.size)} MB` : "");
     meta.append(nm, st);
     li.append(img, meta);
     if (it.status === "failed") {
@@ -255,9 +256,9 @@ document.addEventListener("visibilitychange", async () => {
   if (document.visibilityState !== "visible" || els.cameraView.hidden) return;
   if (!useFallback && (!els.video.srcObject || els.video.srcObject.getVideoTracks().every((t) => t.readyState === "ended"))) startCamera();
   if (Date.now() - lastWarm > 10 * 60 * 1000) { lastWarm = Date.now(); auth.ensureFreshToken().catch(() => {}); }
-  uploader.run(refresh);
+  uploader.run(refresh).then(() => uploader.recheck(refresh));
 });
-setInterval(() => { if (navigator.onLine) uploader.run(refresh); }, 60 * 1000);
+setInterval(() => { if (navigator.onLine) { uploader.run(refresh); uploader.recheck(refresh); } }, 30 * 1000);
 
 // ---------- 起動 ----------
 async function main() {
@@ -281,7 +282,7 @@ async function main() {
   await refresh();
   lastWarm = Date.now();
   auth.ensureFreshToken().catch(() => {});  // 必要ならここでリダイレクト（撮影前）
-  uploader.run(refresh);
+  uploader.run(refresh).then(() => uploader.recheck(refresh));
   startCamera();
 }
 main();

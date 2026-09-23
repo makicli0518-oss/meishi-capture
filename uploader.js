@@ -8,6 +8,7 @@ import { withConflictSuffix } from "./naming.js";
 
 let running = false;
 export const state = { needsAuth: false, lastError: "" };
+const RECHECK_DELAY_MS = 60 * 1000;
 
 // ---------- 送信ログ（端末内・直近 60 件） ----------
 const LOG_KEY = "meishi.uploadLog";
@@ -75,7 +76,7 @@ export async function run(notify = () => {}) {
         const token = await getToken();
         state.needsAuth = false;
         const r = await uploadWithChecks(token, item, folderState);
-        await queue.update(item.id, { status: "done", name: r.name, remoteId: r.id, blob: null, doneAt: Date.now(), error: "" });
+        await queue.update(item.id, { status: "done", name: r.name, remoteId: r.id, doneAt: Date.now(), recheckAt: Date.now() + RECHECK_DELAY_MS, error: "" });
         log({ name: r.name, event: "done", id: r.id, size: r.size, path: r.path, ms: Date.now() - started });
         state.lastError = "";
       } catch (e) {
@@ -104,5 +105,38 @@ export async function run(notify = () => {}) {
   } finally {
     running = false;
     notify();
+  }
+}
+
+// 送信成功から一定時間後に OneDrive 上の実在を再確認する。
+// 存在すれば端末内の画像本体を削除、消えていれば自動で再送キューに戻す。
+let rechecking = false;
+export async function recheck(notify = () => {}) {
+  if (rechecking || !navigator.onLine) return;
+  rechecking = true;
+  try {
+    const items = (await queue.all()).filter((i) => i.status === "done" && i.blob && i.remoteId && (i.recheckAt || 0) <= Date.now());
+    if (!items.length) return;
+    let token;
+    try { token = await getToken(); } catch (_) { return; }
+    for (const it of items) {
+      try {
+        const remote = await getItem(token, it.remoteId);
+        if (remote.deleted || remote.size !== it.blob.size) throw new GraphError(404, "");
+        await queue.update(it.id, { blob: null });
+        log({ name: it.name, event: "verified", id: it.remoteId });
+      } catch (e) {
+        if (e instanceof GraphError && e.status === 404) {
+          log({ name: it.name, event: "vanished", id: it.remoteId, error: "OneDrive から消えていたため再送" });
+          await queue.update(it.id, { status: "pending", remoteId: null, error: "" });
+        } else {
+          log({ name: it.name, event: "recheck-error", error: e.message || String(e) });
+        }
+      }
+    }
+    notify();
+    await run(notify);
+  } finally {
+    rechecking = false;
   }
 }
