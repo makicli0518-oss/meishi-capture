@@ -12,6 +12,7 @@ const els = {
   video: $("video"), flash: $("flash"), hint: $("camera-hint"), file: $("file-fallback"),
   controls: $("controls"), back: $("btn-back"), shutter: $("btn-shutter"), historyBtn: $("btn-history"),
   history: $("history"), historyList: $("history-list"), menu: $("menu"), banner: $("banner"),
+  log: $("log"), logText: $("log-text"),
   toast: $("toast"), net: $("net"),
   cntDone: $("cnt-done"), cntPending: $("cnt-pending"), cntFailed: $("cnt-failed"),
 };
@@ -39,7 +40,18 @@ function showView(name) {
   els.controls.hidden = name !== "camera";
 }
 function openPanel(el) { el.hidden = false; }
-function closePanels() { els.history.hidden = true; els.menu.hidden = true; }
+function closePanels() { els.history.hidden = true; els.menu.hidden = true; els.log.hidden = true; }
+
+function renderLog() {
+  const lines = uploader.readLog().map((e) => {
+    const d = new Date(e.t);
+    const p = (n) => String(n).padStart(2, "0");
+    const t = `${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+    const extra = Object.entries(e).filter(([k]) => !["t", "name", "event"].includes(k)).map(([k, v]) => `${k}=${v}`).join(" ");
+    return `${t} ${e.event.padEnd(11)} ${e.name || ""} ${extra}`;
+  });
+  els.logText.textContent = lines.length ? lines.join("\n") : "まだ送信していません";
+}
 
 async function refresh() {
   const c = await queue.counts();
@@ -231,6 +243,8 @@ els.banner.addEventListener("click", () => { if (uploader.state.needsAuth) auth.
 $("m-retry").addEventListener("click", async () => { const n = await queue.retryFailed(); closePanels(); toast(`${n} 件を再送します`); refresh(); uploader.run(refresh); });
 $("m-test").addEventListener("click", () => { closePanels(); testUpload().catch((e) => toast(String(e), "err")); });
 $("m-flip").addEventListener("click", () => { closePanels(); facing = facing === "environment" ? "user" : "environment"; startCamera(); });
+$("m-log").addEventListener("click", () => { closePanels(); renderLog(); openPanel(els.log); });
+$("log-clear").addEventListener("click", () => { if (confirm("送信ログを消去しますか？")) { uploader.clearLog(); renderLog(); } });
 $("m-clear").addEventListener("click", async () => { await queue.clearDone(); closePanels(); refresh(); toast("送信済の履歴を消去しました"); });
 $("m-logout").addEventListener("click", () => { if (confirm("サインアウトしますか？ 次回起動時に再サインインが必要になります。")) auth.logout(); });
 document.addEventListener("keydown", (e) => { if (e.code === "Space" && !els.cameraView.hidden && e.target === document.body) { e.preventDefault(); shoot("front"); } });

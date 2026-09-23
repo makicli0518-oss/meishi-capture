@@ -39,7 +39,7 @@
 
     <section id="view-camera" class="view" hidden>
       <video id="video" autoplay playsinline muted></video>
-      <div id="guide" aria-hidden="true"></div>
+      <div id="guide" aria-hidden="true"><span>枠いっぱいに名刺を合わせると文字がはっきり写ります</span></div>
       <div id="flash" aria-hidden="true"></div>
       <p id="camera-hint" class="hint" hidden></p>
       <input id="file-fallback" type="file" accept="image/*" capture="environment" hidden>
@@ -68,9 +68,21 @@
     <button id="m-retry">失敗分をすべて再送</button>
     <button id="m-test">テスト送信（動作確認用）</button>
     <button id="m-flip">カメラを切り替え（前／後）</button>
+    <button id="m-log">送信ログを表示（不具合調査用）</button>
     <button id="m-clear">送信済の履歴を消去</button>
     <button id="m-logout" class="danger">サインアウト</button>
     <p id="m-info" class="muted"></p>
+  </aside>
+
+  <aside id="log" hidden>
+    <div class="panel-head">
+      <b>送信ログ（直近 60 件）</b>
+      <span>
+        <button id="log-clear" class="icon" aria-label="ログを消去" title="ログを消去">&#128465;</button>
+        <button class="icon" data-close="log" aria-label="閉じる">&times;</button>
+      </span>
+    </div>
+    <pre id="log-text" class="muted"></pre>
   </aside>
 
   <div id="toast" hidden></div>
