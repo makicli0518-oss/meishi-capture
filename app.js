@@ -23,6 +23,7 @@ let useFallback = false;
 let busy = false;
 let lastWarm = 0;
 const usedBases = new Set();
+let cropEnabled = localStorage.getItem("meishi.crop") !== "0"; // 枠内だけ保存（既定 ON）
 
 // ---------- 表示ユーティリティ ----------
 let toastTimer = null;
@@ -95,7 +96,7 @@ async function allocateBase(date) {
   return base;
 }
 
-async function handleShot(blob, side) {
+async function handleShot(blob, side, crop = null) {
   let base, name, kind;
   if (side === "back" && currentBase) {
     base = currentBase;
@@ -108,7 +109,8 @@ async function handleShot(blob, side) {
     kind = "front";
     currentBase = base;
   }
-  const [small, thumb] = await Promise.all([compress(blob, CONFIG.image), thumbnail(blob)]);
+  const small = await compress(blob, CONFIG.image, crop);
+  const thumb = await thumbnail(small);
   await queue.add({ name, base, side: kind, blob: small, size: small.size, thumb, status: "pending", createdAt: Date.now(), attempts: 0 });
   toast(`${name}（${mb(small.size)} MB）を保存しました`);
   refresh();
@@ -128,8 +130,9 @@ async function shoot(side) {
   try {
     els.flash.classList.add("on");
     setTimeout(() => els.flash.classList.remove("on"), 120);
+    const crop = cropEnabled ? camera.guideCropFraction(els.video, $("guide")) : null;
     const blob = await camera.capture(els.video);
-    await handleShot(blob, side);
+    await handleShot(blob, side, crop);
   } catch (e) {
     console.error(e);
     toast(`撮影エラー: ${e.message || e}`, "err", 4000);
@@ -236,6 +239,7 @@ $("btn-menu").addEventListener("click", () => {
   closePanels();
   const a = auth.getAccount();
   $("m-info").textContent = `${a ? a.username : "未サインイン"} / 保存先 ${CONFIG.folder} / v${CONFIG.version}`;
+  updateCropLabel();
   openPanel(els.menu);
 });
 document.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", closePanels));
@@ -243,6 +247,8 @@ $("btn-login").addEventListener("click", () => auth.login().catch((e) => toast(S
 els.banner.addEventListener("click", () => { if (uploader.state.needsAuth) auth.interactiveRenew(); });
 $("m-retry").addEventListener("click", async () => { const n = await queue.retryFailed(); closePanels(); toast(`${n} 件を再送します`); refresh(); uploader.run(refresh); });
 $("m-test").addEventListener("click", () => { closePanels(); testUpload().catch((e) => toast(String(e), "err")); });
+function updateCropLabel() { $("m-crop").textContent = `枠内だけ保存: ${cropEnabled ? "ON" : "OFF（全体を保存）"}`; }
+$("m-crop").addEventListener("click", () => { cropEnabled = !cropEnabled; localStorage.setItem("meishi.crop", cropEnabled ? "1" : "0"); updateCropLabel(); toast(cropEnabled ? "枠内だけを保存します" : "画面全体を保存します"); });
 $("m-flip").addEventListener("click", () => { closePanels(); facing = facing === "environment" ? "user" : "environment"; startCamera(); });
 $("m-log").addEventListener("click", () => { closePanels(); renderLog(); openPanel(els.log); });
 $("log-clear").addEventListener("click", () => { if (confirm("送信ログを消去しますか？")) { uploader.clearLog(); renderLog(); } });

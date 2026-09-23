@@ -62,3 +62,34 @@ export async function capture(video) {
   if (!blob) throw new Error("撮影に失敗しました");
   return blob;
 }
+
+// 画面上の枠（guideEl）が、カメラ映像のどの範囲に当たるかを 0〜1 の割合で返す。
+// video は object-fit: cover で表示されている前提。margin は枠に対する余白の割合。
+export function guideCropFraction(video, guideEl, margin = 0.04) {
+  const vw = video.videoWidth;
+  const vh = video.videoHeight;
+  if (!vw || !vh) return null;
+  const er = video.getBoundingClientRect();
+  const gr = guideEl.getBoundingClientRect();
+  if (!er.width || !er.height || !gr.width || !gr.height) return null;
+  const scale = Math.max(er.width / vw, er.height / vh);
+  const dispW = vw * scale;
+  const dispH = vh * scale;
+  const offX = er.left + (er.width - dispW) / 2;
+  const offY = er.top + (er.height - dispH) / 2;
+  let x = (gr.left - offX) / dispW;
+  let y = (gr.top - offY) / dispH;
+  let w = gr.width / dispW;
+  let h = gr.height / dispH;
+  x -= w * margin;
+  y -= h * margin;
+  w *= 1 + 2 * margin;
+  h *= 1 + 2 * margin;
+  const clamp = (v) => Math.min(1, Math.max(0, v));
+  const x0 = clamp(x);
+  const y0 = clamp(y);
+  const x1 = clamp(x + w);
+  const y1 = clamp(y + h);
+  if (x1 - x0 < 0.05 || y1 - y0 < 0.05) return null;
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0, videoAspect: vw / vh };
+}
