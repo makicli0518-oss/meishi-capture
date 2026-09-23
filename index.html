@@ -40,6 +40,11 @@
     <section id="view-camera" class="view" hidden>
       <video id="video" autoplay playsinline muted></video>
       <div id="guide" aria-hidden="true"><span>枠いっぱいに名刺を合わせると文字がはっきり写ります</span></div>
+      <div id="native-note" hidden>
+        <div class="icon-cam">&#128247;</div>
+        <p>下のシャッターを押すと<br>スマホのカメラが開きます</p>
+        <p class="muted">名刺が画面いっぱいになるよう寄り、ピントが合ってから撮影 →「✓」で確定すると自動送信します。<br>裏面は「裏面を撮る」から同じ手順です。</p>
+      </div>
       <div id="flash" aria-hidden="true"></div>
       <p id="camera-hint" class="hint" hidden></p>
       <input id="file-fallback" type="file" accept="image/*" capture="environment" hidden>
@@ -67,6 +72,7 @@
     </div>
     <button id="m-retry">失敗分をすべて再送</button>
     <button id="m-test">テスト送信（動作確認用）</button>
+    <button id="m-cammode">撮影方法: スマホ標準カメラ</button>
     <button id="m-crop">枠内だけ保存: ON</button>
     <button id="m-flip">カメラを切り替え（前／後）</button>
     <button id="m-log">送信ログを表示（不具合調査用）</button>

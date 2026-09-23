@@ -1,6 +1,6 @@
 // Service Worker: アプリ本体をキャッシュしてオフラインでも起動できるようにする。
 // 同一オリジンの GET だけを扱う（Microsoft へのサインインや Graph 通信には触れない）。
-const VERSION = "0.1.3";
+const VERSION = "0.1.4";
 const CACHE = `meishi-capture-${VERSION}`;
 const ASSETS = [
   "./", "./index.html", "./style.css", "./app.js", "./auth.js", "./camera.js", "./config.js",

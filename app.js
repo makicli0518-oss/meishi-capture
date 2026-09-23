@@ -24,6 +24,9 @@ let busy = false;
 let lastWarm = 0;
 const usedBases = new Set();
 let cropEnabled = localStorage.getItem("meishi.crop") !== "0"; // 枠内だけ保存（既定 ON）
+// 撮影方法: "native" = スマホ標準カメラアプリ（既定。ピント・手ぶれ補正が効く）, "inapp" = ブラウザ内カメラ（枠で切り抜き）
+let camMode = localStorage.getItem("meishi.camMode") || "native";
+const usingFileInput = () => camMode === "native" || useFallback;
 
 // ---------- 表示ユーティリティ ----------
 let toastTimer = null;
@@ -119,7 +122,7 @@ async function handleShot(blob, side, crop = null) {
 
 async function shoot(side) {
   if (busy) return;
-  if (useFallback) {
+  if (usingFileInput()) {
     els.file.dataset.side = side;
     els.file.click();
     return;
@@ -148,12 +151,29 @@ els.file.addEventListener("change", async () => {
   const side = els.file.dataset.side || "front";
   els.file.value = "";
   if (!f) return;
+  busy = true;
+  els.shutter.disabled = true;
   try { await handleShot(f, side); }
   catch (e) { console.error(e); toast(`保存エラー: ${e.message || e}`, "err", 4000); }
+  finally { busy = false; els.shutter.disabled = false; refresh(); }
 });
+
+function showNativeMode(on) {
+  els.cameraView.classList.toggle("native", on);
+  $("guide").hidden = on;
+  els.video.hidden = on;
+  $("native-note").hidden = !on;
+}
 
 async function startCamera() {
   els.hint.hidden = true;
+  if (camMode === "native") {
+    camera.stop();
+    els.video.srcObject = null;
+    showNativeMode(true);
+    return;
+  }
+  showNativeMode(false);
   if (!camera.isSupported()) { enableFallback("この端末ではブラウザ内カメラが使えないため、標準カメラで撮影します"); return; }
   try {
     await camera.start(els.video, facing);
@@ -240,7 +260,23 @@ $("btn-menu").addEventListener("click", () => {
   const a = auth.getAccount();
   $("m-info").textContent = `${a ? a.username : "未サインイン"} / 保存先 ${CONFIG.folder} / v${CONFIG.version}`;
   updateCropLabel();
+  updateCamModeLabel();
   openPanel(els.menu);
+});
+function updateCamModeLabel() {
+  $("m-cammode").textContent = camMode === "native"
+    ? "撮影方法: スマホ標準カメラ（ピント自動・全体を保存）"
+    : "撮影方法: アプリ内カメラ（枠で切り抜き）";
+  $("m-crop").hidden = camMode === "native";
+  $("m-flip").hidden = camMode === "native";
+}
+$("m-cammode").addEventListener("click", () => {
+  camMode = camMode === "native" ? "inapp" : "native";
+  localStorage.setItem("meishi.camMode", camMode);
+  updateCamModeLabel();
+  closePanels();
+  toast(camMode === "native" ? "シャッターでスマホ標準カメラが開きます" : "アプリ内カメラで撮影します（枠内を切り抜き）");
+  startCamera();
 });
 document.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", closePanels));
 $("btn-login").addEventListener("click", () => auth.login().catch((e) => toast(String(e), "err")));
@@ -260,7 +296,7 @@ window.addEventListener("online", () => { refresh(); uploader.run(refresh); });
 window.addEventListener("offline", refresh);
 document.addEventListener("visibilitychange", async () => {
   if (document.visibilityState !== "visible" || els.cameraView.hidden) return;
-  if (!useFallback && (!els.video.srcObject || els.video.srcObject.getVideoTracks().every((t) => t.readyState === "ended"))) startCamera();
+  if (!usingFileInput() && (!els.video.srcObject || els.video.srcObject.getVideoTracks().every((t) => t.readyState === "ended"))) startCamera();
   if (Date.now() - lastWarm > 10 * 60 * 1000) { lastWarm = Date.now(); auth.ensureFreshToken().catch(() => {}); }
   uploader.run(refresh).then(() => uploader.recheck(refresh));
 });

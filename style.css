@@ -45,6 +45,11 @@ button.primary { background: var(--accent); border: 0; color: #fff; padding: 14p
 #guide { position: absolute; left: 50%; top: 50%; width: 84%; aspect-ratio: 91 / 55; transform: translate(-50%, -50%);
   border: 2px solid rgba(255,255,255,0.7); border-radius: 8px; pointer-events: none; }
 #guide span { position: absolute; left: 0; right: 0; top: 100%; margin-top: 8px; text-align: center; color: #fff; font-size: 12px; text-shadow: 0 0 4px #000; }
+#native-note { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center;
+  text-align: center; padding: 24px; gap: 10px; background: #161616; }
+#native-note .icon-cam { font-size: 64px; line-height: 1; opacity: 0.8; }
+#native-note p { margin: 0; font-size: 17px; line-height: 1.6; }
+#native-note p.muted { font-size: 13px; line-height: 1.6; max-width: 320px; }
 #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity 0.15s; }
 #flash.on { opacity: 0.8; transition: none; }
 .hint { position: absolute; left: 0; right: 0; bottom: 8px; margin: 0; text-align: center; color: #fff; text-shadow: 0 0 4px #000; font-size: 13px; }

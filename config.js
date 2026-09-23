@@ -1,6 +1,6 @@
 // アプリ設定（すべて公開情報。秘密の値は含まない）
 export const CONFIG = {
-  version: "0.1.3",
+  version: "0.1.4",
   // Entra ID アプリ登録「名刺撮影PWA」のアプリケーション (クライアント) ID
   clientId: "ee2e645e-96fe-491c-9d5d-98f6b7802010",
   // 個人 Microsoft アカウント専用
