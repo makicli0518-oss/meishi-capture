@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F6E56">
+<meta name="mobile-web-app-capable" content="yes">
+<title>名刺撮影</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header id="status">
+    <span class="pill ok">送信済 <b id="cnt-done">0</b></span>
+    <span class="pill wait">待機 <b id="cnt-pending">0</b></span>
+    <span class="pill err">失敗 <b id="cnt-failed">0</b></span>
+    <span id="net" class="net" title="通信状態"></span>
+    <button id="btn-menu" class="icon" aria-label="メニュー">&#8943;</button>
+  </header>
+
+  <div id="banner" hidden></div>
+
+  <main id="main">
+    <section id="view-loading" class="view">
+      <p>準備中…</p>
+    </section>
+
+    <section id="view-signin" class="view" hidden>
+      <h1>名刺撮影</h1>
+      <p>撮った名刺を OneDrive の <code>名刺/未処理</code> に自動保存します。</p>
+      <p>初回だけ Microsoft アカウントでサインインします。<br>
+        「サインインの状態を維持しますか?」と聞かれたら <b>「はい」</b> を選んでください。</p>
+      <button id="btn-login" class="primary">Microsoft でサインイン</button>
+      <p id="signin-error" class="error" hidden></p>
+    </section>
+
+    <section id="view-camera" class="view" hidden>
+      <video id="video" autoplay playsinline muted></video>
+      <div id="guide" aria-hidden="true"></div>
+      <div id="flash" aria-hidden="true"></div>
+      <p id="camera-hint" class="hint" hidden></p>
+      <input id="file-fallback" type="file" accept="image/*" capture="environment" hidden>
+    </section>
+  </main>
+
+  <footer id="controls" hidden>
+    <button id="btn-back" class="side" disabled>裏面を撮る</button>
+    <button id="btn-shutter" aria-label="撮影"><span></span></button>
+    <button id="btn-history" class="side">履歴</button>
+  </footer>
+
+  <aside id="history" hidden>
+    <div class="panel-head">
+      <b>履歴（直近 50 件）</b>
+      <button class="icon" data-close="history" aria-label="閉じる">&times;</button>
+    </div>
+    <ul id="history-list"></ul>
+  </aside>
+
+  <aside id="menu" hidden>
+    <div class="panel-head">
+      <b>メニュー</b>
+      <button class="icon" data-close="menu" aria-label="閉じる">&times;</button>
+    </div>
+    <button id="m-retry">失敗分をすべて再送</button>
+    <button id="m-test">テスト送信（動作確認用）</button>
+    <button id="m-flip">カメラを切り替え（前／後）</button>
+    <button id="m-clear">送信済の履歴を消去</button>
+    <button id="m-logout" class="danger">サインアウト</button>
+    <p id="m-info" class="muted"></p>
+  </aside>
+
+  <div id="toast" hidden></div>
+</div>
+
+<script src="vendor/msal-browser.min.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
